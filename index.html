@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>💰 متجر الكوينز</title>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{width:100%;min-height:100%;overflow-x:hidden}
+body{font-family:'Noto Color Emoji','Segoe UI Emoji','Apple Color Emoji','Segoe UI',Arial,sans-serif;background:radial-gradient(circle at center,#0a1f0e,#051007);background-attachment:fixed;min-height:100vh;color:#fff;display:flex;justify-content:center;align-items:flex-start;padding:10px;padding-top:max(10px,env(safe-area-inset-top));padding-bottom:max(20px,env(safe-area-inset-bottom))}
+.screen{background:linear-gradient(145deg,#0f2415,#0a1a0e);border-radius:24px;padding:20px 16px;max-width:520px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.9);border:2px solid #1e3d24;display:none;margin:auto}
+.screen.active{display:block;animation:fadeIn .35s}
+@keyframes fadeIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+h1{color:#ffd700;font-size:24px;margin-bottom:6px;text-align:center;text-shadow:0 0 25px rgba(255,215,0,.5)}
+h2{color:#58d68d;font-size:17px;margin-bottom:12px;text-align:center}
+.subtitle{color:#6a8f75;font-size:12px;text-align:center;margin-bottom:16px;letter-spacing:1px}
+.field{margin-bottom:10px}
+.field input{width:100%;padding:13px 15px;background:#071409;border:1.5px solid #1e3d24;border-radius:12px;color:#fff;font-size:15px;outline:none;text-align:right;font-family:inherit}
+.field input:focus{border-color:#ffd700}
+.field label{display:block;color:#6a8f75;font-size:11px;margin-bottom:4px;text-align:right}
+.btn{width:100%;padding:13px;border:none;border-radius:50px;font-size:14px;font-weight:800;cursor:pointer;margin-top:7px;transition:.2s;font-family:inherit}
+.btn:active{transform:scale(.97)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn-primary{background:linear-gradient(135deg,#ffd700,#f39c12);color:#06100a}
+.btn-secondary{background:#1a3322;color:#58d68d;border:1px solid #2a5038}
+.btn-danger{background:linear-gradient(135deg,#e74c3c,#c0392b);color:#fff}
+.btn-success{background:linear-gradient(135deg,#58d68d,#27ae60);color:#06100a}
+.msg{margin-top:10px;padding:11px;border-radius:10px;font-size:13px;text-align:center;display:none}
+.msg.show{display:block}
+.msg.error{background:rgba(231,76,60,.15);color:#e74c3c;border:1px solid rgba(231,76,60,.3)}
+.msg.success{background:rgba(88,214,141,.15);color:#58d68d;border:1px solid rgba(88,214,141,.3)}
+.msg.info{background:rgba(52,152,219,.15);color:#3498db;border:1px solid rgba(52,152,219,.3)}
+.user-bar{background:#071409;border-radius:14px;padding:12px;display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;border:1px solid #1e3d24}
+.user-info-left{display:flex;align-items:center;gap:10px}
+.user-avatar{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#ffd700,#f39c12);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;color:#06100a;overflow:hidden;flex-shrink:0}
+.user-avatar img{width:100%;height:100%;object-fit:cover}
+.user-name{font-weight:700;font-size:14px}
+.user-coins{color:#ffd700;font-weight:800;font-family:monospace;font-size:15px}
+.user-dfp{color:#2ecc71;font-weight:800;font-family:monospace;font-size:15px;margin-top:2px}
+.section-title{color:#ffd700;font-size:15px;font-weight:800;margin:14px 0 8px;text-align:right;padding-right:4px;border-right:3px solid #ffd700;padding-left:8px}
+.section-title.dfp-title{color:#2ecc71;border-right-color:#2ecc71}
+.packages{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.package{background:linear-gradient(135deg,#132a1a,#0d2114);border:2px solid #2a5038;border-radius:16px;padding:14px;cursor:pointer;transition:.2s;text-align:center;position:relative}
+.package:active{transform:scale(.97)}
+.package.selected{border-color:#ffd700;background:linear-gradient(135deg,#2a2010,#1a1408);box-shadow:0 0 20px rgba(255,215,0,.3)}
+.package .coins{color:#ffd700;font-size:20px;font-weight:900;margin-bottom:4px}
+.package .price{color:#58d68d;font-size:14px;font-weight:700}
+.package .badge{position:absolute;top:-8px;right:8px;background:#e74c3c;color:#fff;font-size:9px;padding:2px 8px;border-radius:20px;font-weight:800}
+.package.dfp{border-color:#2ecc71;background:linear-gradient(135deg,#0d2a15,#081a0e)}
+.package.dfp.selected{border-color:#2ecc71;background:linear-gradient(135deg,#0d3a1a,#082010);box-shadow:0 0 25px rgba(46,204,113,.5)}
+.package.dfp .coins{color:#2ecc71}
+.package.dfp .price{color:#ffd700}
+.package.dfp .badge{background:#2ecc71;color:#06100a}
+.package.dfp .dfp-label{font-size:10px;color:#7fffd4;margin-bottom:2px;font-weight:700}
+.package.dfp .gift{font-size:10px;color:#ffd700;margin-top:3px;font-weight:800}
+.package.exclusive{grid-column:span 2;border:2px solid #ffd700;background:linear-gradient(135deg,#2a1e05,#3a2810);box-shadow:0 0 30px rgba(255,215,0,.4)}
+.package.exclusive .coins{font-size:15px;color:#ffd700}
+.package.exclusive .price{font-size:22px;color:#fff;font-weight:900}
+.package.exclusive .ex-label{color:#ffb800;font-size:11px;margin-bottom:8px;font-weight:800}
+.package.exclusive .ex-players{display:flex;justify-content:center;gap:8px;margin:8px 0;flex-wrap:wrap}
+.package.exclusive .ex-player{background:rgba(255,215,0,.1);border:1px solid #ffd700;border-radius:10px;padding:6px 10px;font-size:12px;color:#ffd700;font-weight:800}
+.payment-info{background:#071409;border:1px solid #1e3d24;border-radius:14px;padding:14px;margin-bottom:12px;font-size:13px;line-height:1.8}
+.payment-info .row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px dashed #1e3d24}
+.payment-info .row:last-child{border:none}
+.payment-info .label{color:#6a8f75}
+.payment-info .value{color:#ffd700;font-weight:700;direction:ltr;user-select:all;cursor:pointer;font-size:16px}
+.orange-badge{display:inline-block;background:linear-gradient(135deg,#ff6600,#ff3300);color:#fff;padding:4px 14px;border-radius:20px;font-size:12px;font-weight:800;margin-bottom:10px}
+.tabs{display:flex;background:#071409;border-radius:12px;padding:4px;margin-bottom:12px}
+.tabs button{flex:1;background:transparent;border:none;color:#6a8f75;padding:10px;border-radius:8px;font-weight:700;cursor:pointer;font-size:12px;font-family:inherit}
+.tabs button.active{background:linear-gradient(135deg,#ffd700,#f39c12);color:#06100a}
+.history-item{background:#071409;border:1px solid #1e3d24;border-radius:12px;padding:12px;margin-bottom:8px;font-size:12px}
+.history-item .head{display:flex;justify-content:space-between;margin-bottom:6px}
+.history-item .pkg{color:#ffd700;font-weight:800}
+.history-item .pkg.dfp-pkg{color:#2ecc71}
+.history-item .status{padding:2px 10px;border-radius:20px;font-size:10px;font-weight:700}
+.history-item .status.pending{background:rgba(243,156,18,.2);color:#f39c12}
+.history-item .status.approved{background:rgba(88,214,141,.2);color:#58d68d}
+.history-item .status.rejected{background:rgba(231,76,60,.2);color:#e74c3c}
+.history-item .meta{color:#6a8f75;font-size:10px;direction:ltr;text-align:right}
+.empty{text-align:center;color:#6a8f75;font-size:12px;padding:20px}
+.admin-req{background:#071409;border:1px solid #1e3d24;border-radius:12px;padding:12px;margin-bottom:10px}
+.admin-req.dfp-req{border-color:#2ecc71;background:linear-gradient(135deg,#0d1a0e,#081408)}
+.admin-req .head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.admin-req .username{color:#58d68d;font-weight:800;font-size:14px}
+.admin-req .pkg{color:#ffd700;font-weight:700;font-size:13px}
+.admin-req .pkg.dfp-pkg{color:#2ecc71}
+.admin-req .details{font-size:11px;color:#6a8f75;line-height:1.8;margin-bottom:8px}
+.admin-req .details span{color:#fff;font-weight:700;direction:ltr}
+.admin-req .actions{display:flex;gap:8px}
+.admin-req .actions button{flex:1;padding:10px;border-radius:50px;font-size:12px;font-weight:700;cursor:pointer;border:none;font-family:inherit}
+.admin-req .img-preview{max-width:100%;border-radius:8px;margin-bottom:8px;border:1px solid #1e3d24;cursor:pointer}
+#receiptInput{display:none}
+.upload-btn{background:#1a3322;color:#58d68d;border:1px dashed #2a5038;padding:12px;border-radius:12px;text-align:center;cursor:pointer;font-size:13px;margin-bottom:10px;display:block}
+.upload-btn:active{background:#0d2114}
+.footer{text-align:center;color:#3a5a42;font-size:10px;margin-top:14px}
+#errorBanner{background:rgba(231,76,60,.2);border:1px solid #e74c3c;color:#e74c3c;padding:10px;border-radius:10px;font-size:12px;text-align:center;margin-bottom:10px;display:none}
+.admin-header{background:linear-gradient(135deg,#2a2010,#1a1408);border:2px solid #ffd700;border-radius:14px;padding:14px;text-align:center;margin-bottom:14px}
+.admin-header .crown{font-size:36px;display:block;margin-bottom:6px}
+.admin-header .title{color:#ffd700;font-weight:900;font-size:16px}
+.admin-header .logout{color:#e74c3c;font-size:11px;cursor:pointer;text-decoration:underline;margin-top:8px;display:inline-block}
+</style>
+</head>
+<body>
+
+<div class="screen active" id="authScreen">
+    <div id="errorBanner"></div>
+    <h1>💰 متجر الكوينز</h1>
+    <div class="subtitle">Football Draft</div>
+    <div class="tabs">
+        <button class="active" id="tabLogin" onclick="switchAuthTab('login')">تسجيل الدخول</button>
+        <button id="tabSignup" onclick="switchAuthTab('signup')">حساب جديد</button>
+    </div>
+    <div id="loginForm">
+        <div class="field"><label>👤 اسم المستخدم</label><input type="text" id="loginUser" placeholder="اكتب اسمك" autocomplete="off"></div>
+        <div class="field"><label>🔑 كلمة المرور</label><input type="password" id="loginPass" placeholder="كلمة المرور"></div>
+        <button class="btn btn-primary" onclick="doLogin()">🔓 دخول</button>
+    </div>
+    <div id="signupForm" style="display:none">
+        <div class="field"><label>👤 اسم المستخدم</label><input type="text" id="signupUser" placeholder="اكتب اسمك" autocomplete="off"></div>
+        <div class="field"><label>🔑 كلمة المرور</label><input type="password" id="signupPass" placeholder="6 حروف على الأقل"></div>
+        <div class="field"><label>🔑 تأكيد كلمة المرور</label><input type="password" id="signupPass2" placeholder="تأكيد"></div>
+        <button class="btn btn-primary" onclick="doSignup()">✨ إنشاء حساب</button>
+    </div>
+    <div class="msg" id="authMsg"></div>
+    <div class="footer">Football Draft © Coin Shop</div>
+</div>
+
+<div class="screen" id="shopScreen">
+    <div class="user-bar">
+        <div class="user-info-left">
+            <div class="user-avatar" id="shopAvatar">A</div>
+            <div>
+                <div class="user-name" id="shopUserName">Player</div>
+                <div class="user-dfp">💚 <span id="shopDfp">0</span> DFP</div>
+            </div>
+        </div>
+        <div style="text-align:left">
+            <div class="user-coins">💰 <span id="shopCoins">0</span></div>
+        </div>
+    </div>
+
+    <div class="tabs">
+        <button class="active" id="tabBuy" onclick="switchShopTab('buy')">🛒 شراء</button>
+        <button id="tabHistory" onclick="switchShopTab('history')">📋 طلباتي</button>
+    </div>
+
+    <div id="buySection">
+        <div class="section-title">💰 باقات الكوينز</div>
+        <div class="packages" id="coinPackagesGrid"></div>
+
+        <div class="section-title dfp-title">💚 باقات DFP</div>
+        <div class="packages" id="dfpPackagesGrid"></div>
+
+        <div class="section-title">🔥 باقات حصرية</div>
+        <div class="packages" id="exclusivePackagesGrid"></div>
+
+        <div style="text-align:center"><span class="orange-badge">📱 أورنج كاش</span></div>
+
+        <div class="payment-info" id="paymentInfo"></div>
+
+        <div class="field">
+            <label>🔢 رقم المحفظة اللي حوّلت منها</label>
+            <input type="text" id="transactionId" placeholder="مثال: 01012345678" autocomplete="off">
+        </div>
+
+        <label class="upload-btn" for="receiptInput" id="uploadLabel">📷 اضغط لرفع صورة إثبات الدفع (اختياري)</label>
+        <input type="file" id="receiptInput" accept="image/*" onchange="loadReceipt(event)">
+        <div id="receiptPreview"></div>
+
+        <button class="btn btn-success" onclick="submitOrder()">✅ إرسال الطلب</button>
+        <div class="msg" id="buyMsg"></div>
+    </div>
+
+    <div id="historySection" style="display:none">
+        <h2>طلباتي السابقة</h2>
+        <div id="historyList"></div>
+    </div>
+
+    <button class="btn btn-secondary" onclick="doLogout()" style="margin-top:14px">🚪 تسجيل خروج</button>
+    <div class="footer">Football Draft © Coin Shop</div>
+</div>
+
+<div class="screen" id="adminLoginScreen">
+    <div class="admin-header">
+        <span class="crown">👑</span>
+        <div class="title">لوحة الإدارة</div>
+        <div style="color:#6a8f75;font-size:11px;margin-top:4px;">أدخل كلمة المرور للدخول</div>
+    </div>
+    <div class="field">
+        <label>🔐 كلمة مرور الإدارة</label>
+        <input type="password" id="adminPassInput" placeholder="اكتب كلمة المرور" inputmode="numeric">
+    </div>
+    <button class="btn btn-primary" onclick="doAdminLogin()">🔓 دخول الإدارة</button>
+    <div class="msg" id="adminLoginMsg"></div>
+    <button class="btn btn-secondary" onclick="backToShop()" style="margin-top:14px">↩ رجوع للمتجر</button>
+</div>
+
+<div class="screen" id="adminScreen">
+    <div class="admin-header">
+        <span class="crown">👑</span>
+        <div class="title">لوحة الإدارة</div>
+        <div style="color:#6a8f75;font-size:11px;margin-top:4px;">طلبات قيد الانتظار: <span id="pendingCount" style="color:#f39c12;font-weight:800">0</span></div>
+        <span class="logout" onclick="adminLogout()">🚪 خروج من الإدارة</span>
+    </div>
+    <div id="adminList"></div>
+</div>
+
+<script>
+var firebaseConfig = {
+  apiKey: "AIzaSyD0jK_Zw6mcNM7i0vEmT29s4FDoekYOOdA",
+  authDomain: "draftsjsd.firebaseapp.com",
+  databaseURL: "https://draftsjsd-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "draftsjsd",
+  storageBucket: "draftsjsd.firebasestorage.app",
+  messagingSenderId: "162212049759",
+  appId: "1:162212049759:web:9324ac88b770b9f9837cea"
+};
+
+var db, auth, firebaseReady = false;
+try {
+    firebase.initializeApp(firebaseConfig);
+    db = firebase.database();
+    auth = firebase.auth();
+    firebaseReady = true;
+} catch(e) { firebaseReady = false; }
+
+var ADMIN_PASSWORD = "7201";
+var ORANGE_CASH_NUMBER = "01281861510";
+
+var COIN_PACKAGES = [
+    { id: 'p1', coins: 1000, price: 10, label: '', type: 'coins' },
+    { id: 'p2', coins: 5000, price: 40, label: 'الأكثر شعبية', type: 'coins' },
+    { id: 'p3', coins: 10000, price: 70, label: '', type: 'coins' },
+    { id: 'p4', coins: 25000, price: 150, label: 'أفضل قيمة', type: 'coins' },
+    { id: 'p5', coins: 50000, price: 250, label: '', type: 'coins' },
+    { id: 'p6', coins: 100000, price: 450, label: 'VIP', type: 'coins' }
+];
+
+var DFP_PACKAGES = [
+    { id: 'd1', dfp: 50, price: 49, label: '', type: 'dfp' },
+    { id: 'd2', dfp: 140, price: 80, label: 'الأكثر شعبية', type: 'dfp' },
+    { id: 'd3', dfp: 300, price: 145, label: 'أفضل قيمة', type: 'dfp' },
+    { id: 'd4', dfp: 1788, bonus: 50, price: 480, label: 'VIP', type: 'dfp' }
+];
+
+var EXCLUSIVE_PACKAGES = [
+    { 
+        id: 'exclusive1', 
+        coins: 0, 
+        price: 499, 
+        label: '🔥 حصري', 
+        type: 'exclusive',
+        exclusivePlayers: [
+            { n: 'Roony', r: 92, c: 'Exclusive', pos: 'ST' },
+            { n: 'Ronaldo Nazário', r: 95, c: 'Exclusive', pos: 'ST' }
+        ],
+        title: 'Roony + Ronaldo Nazário'
+    }
+];
+
+var PACKAGES = COIN_PACKAGES.concat(DFP_PACKAGES).concat(EXCLUSIVE_PACKAGES);
+
+var currentUser = null;
+var currentUserData = null;
+var selectedPackage = null;
+var receiptBase64 = null;
+var isAdminMode = false;
+var adminListener = null;
+
+function showMsg(elId,text,type){var el=document.getElementById(elId);if(!el)return;el.textContent=text;el.className='msg show '+(type||'success');setTimeout(function(){el.className='msg';},5000);}
+function showScreen(id){document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active');});document.getElementById(id).classList.add('active');window.scrollTo({top:0,behavior:'smooth'});}
+function usernameToEmail(username){return username.toLowerCase().replace(/[^a-z0-9]/g,'') + '@fd-game.app';}
+function formatDate(ts){var d = new Date(ts); return d.toLocaleString('ar-EG');}
+
+function switchAuthTab(tab){
+    var tl=document.getElementById('tabLogin'), ts=document.getElementById('tabSignup');
+    var fl=document.getElementById('loginForm'), fs=document.getElementById('signupForm');
+    if(tab==='login'){ tl.classList.add('active'); ts.classList.remove('active'); fl.style.display='block'; fs.style.display='none'; }
+    else { ts.classList.add('active'); tl.classList.remove('active'); fs.style.display='block'; fl.style.display='none'; }
+    document.getElementById('authMsg').className='msg';
+}
+
+function doSignup(){
+    if(!firebaseReady){ showMsg('authMsg','⚠️ Firebase غير متصل','error'); return; }
+    var user = document.getElementById('signupUser').value.trim();
+    var pass = document.getElementById('signupPass').value;
+    var pass2 = document.getElementById('signupPass2').value;
+    if(!user || !pass || !pass2){ showMsg('authMsg','⚠️ املأ جميع الحقول','error'); return; }
+    if(user.length < 3){ showMsg('authMsg','⚠️ الاسم قصير','error'); return; }
+    if(pass.length < 6){ showMsg('authMsg','⚠️ كلمة المرور قصيرة','error'); return; }
+    if(pass !== pass2){ showMsg('authMsg','⚠️ كلمتا المرور مختلفتين','error'); return; }
+    var email = usernameToEmail(user);
+    showMsg('authMsg','⏳ جاري الإنشاء...','info');
+    auth.createUserWithEmailAndPassword(email, pass).then(function(cred){
+        var uid = cred.user.uid;
+        var userData = { username: user, email: email, avatar: null, coins: 1000, dfp: 0, matches: 0, wins: 0, ownedPlayers: {}, created: Date.now() };
+        return db.ref('users/' + uid).set(userData).then(function(){
+            return db.ref('usernames/' + user.toLowerCase()).set(uid).then(function(){
+                return { uid: uid, data: userData };
+            });
+        });
+    }).then(function(result){
+        currentUser = result.uid;
+        currentUserData = result.data;
+        showMsg('authMsg','✅ تم إنشاء الحساب!','success');
+        setTimeout(enterShop, 800);
+    }).catch(function(e){
+        var msg = '⚠️ فشل: ';
+        if(e.code === 'auth/email-already-in-use'){ msg = '⚠️ هذا الاسم مستخدم'; }
+        else { msg = '⚠️ ' + e.message; }
+        showMsg('authMsg', msg, 'error');
+    });
+}
+
+function doLogin(){
+    if(!firebaseReady){ showMsg('authMsg','⚠️ Firebase غير متصل','error'); return; }
+    var user = document.getElementById('loginUser').value.trim();
+    var pass = document.getElementById('loginPass').value;
+    if(!user || !pass){ showMsg('authMsg','⚠️ املأ جميع الحقول','error'); return; }
+    var email = usernameToEmail(user);
+    showMsg('authMsg','⏳ جاري الدخول...','info');
+    auth.signInWithEmailAndPassword(email, pass).then(function(cred){
+        return db.ref('users/' + cred.user.uid).once('value').then(function(snap){ return snap.val(); });
+    }).then(function(data){
+        currentUser = auth.currentUser.uid;
+        currentUserData = data || { username: user, coins: 0, dfp: 0, ownedPlayers: {} };
+        if(!currentUserData.ownedPlayers) currentUserData.ownedPlayers = {};
+        if(currentUserData.dfp === undefined) currentUserData.dfp = 0;
+        showMsg('authMsg','✅ جاري الدخول...','success');
+        setTimeout(enterShop, 500);
+    }).catch(function(e){
+        var msg = '⚠️ ';
+        if(e.code === 'auth/user-not-found'){ msg = '⚠️ حساب غير موجود'; }
+        else if(e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential'){ msg = '⚠️ الاسم أو كلمة المرور خطأ'; }
+        else { msg = '⚠️ ' + e.message; }
+        showMsg('authMsg', msg, 'error');
+    });
+}
+
+function doLogout(){
+    if(!confirm('تسجيل الخروج؟')) return;
+    auth.signOut().then(function(){
+        currentUser = null; currentUserData = null;
+        selectedPackage = null; receiptBase64 = null;
+        showScreen('authScreen');
+        document.getElementById('authMsg').className = 'msg';
+    });
+}
+
+function enterShop(){
+    document.getElementById('shopUserName').textContent = currentUserData.username;
+    document.getElementById('shopCoins').textContent = currentUserData.coins || 0;
+    document.getElementById('shopDfp').textContent = currentUserData.dfp || 0;
+    var av = document.getElementById('shopAvatar');
+    if(currentUserData.avatar){ av.innerHTML = '<img src="' + currentUserData.avatar + '">'; }
+    else { av.textContent = currentUserData.username.charAt(0).toUpperCase(); }
+    renderPackages();
+    updatePaymentInfo();
+    loadHistory();
+    showScreen('shopScreen');
+}
+
+function switchShopTab(tab){
+    var tb=document.getElementById('tabBuy'), th=document.getElementById('tabHistory');
+    var bs=document.getElementById('buySection'), hs=document.getElementById('historySection');
+    if(tab==='buy'){ tb.classList.add('active'); th.classList.remove('active'); bs.style.display='block'; hs.style.display='none'; }
+    else { th.classList.add('active'); tb.classList.remove('active'); hs.style.display='block'; bs.style.display='none'; loadHistory(); }
+}
+
+function renderPackages(){
+    var coinGrid = document.getElementById('coinPackagesGrid');
+    var dfpGrid = document.getElementById('dfpPackagesGrid');
+    var exGrid = document.getElementById('exclusivePackagesGrid');
+    coinGrid.innerHTML = ''; dfpGrid.innerHTML = ''; exGrid.innerHTML = '';
+
+    COIN_PACKAGES.forEach(function(p){
+        var el = document.createElement('div');
+        el.className = 'package';
+        el.id = 'pkg-' + p.id;
+        el.onclick = function(){ selectPackage(p); };
+        el.innerHTML = (p.label ? '<div class="badge">' + p.label + '</div>' : '') +
+            '<div class="coins">💰 ' + p.coins.toLocaleString() + '</div>' +
+            '<div class="price">' + p.price + ' ج.م</div>';
+        coinGrid.appendChild(el);
+    });
+
+    DFP_PACKAGES.forEach(function(p){
+        var el = document.createElement('div');
+        el.className = 'package dfp';
+        el.id = 'pkg-' + p.id;
+        el.onclick = function(){ selectPackage(p); };
+        var totalDfp = p.dfp + (p.bonus || 0);
+        var display = '<div class="coins">💚 ' + p.dfp.toLocaleString() + '</div>';
+        if(p.bonus){
+            display += '<div class="gift">🎁 +' + p.bonus + ' هدية</div>';
+            display += '<div class="dfp-label">الإجمالي: ' + totalDfp.toLocaleString() + ' DFP</div>';
+        } else {
+            display += '<div class="dfp-label">DFP</div>';
+        }
+        display += '<div class="price">' + p.price + ' ج.م</div>';
+        el.innerHTML = (p.label ? '<div class="badge">' + p.label + '</div>' : '') + display;
+        dfpGrid.appendChild(el);
+    });
+
+    EXCLUSIVE_PACKAGES.forEach(function(p){
+        var el = document.createElement('div');
+        el.className = 'package exclusive';
+        el.id = 'pkg-' + p.id;
+        el.onclick = function(){ selectPackage(p); };
+        var playersHtml = p.exclusivePlayers.map(function(pl){
+            return '<div class="ex-player">' + pl.n + ' ' + pl.r + '</div>';
+        }).join('');
+        el.innerHTML = 
+            '<div class="badge">' + p.label + '</div>' +
+            '<div class="ex-label">🎁 باقة حصرية</div>' +
+            '<div class="coins">' + p.title + '</div>' +
+            '<div class="ex-players">' + playersHtml + '</div>' +
+            '<div class="price">' + p.price + ' ج.م</div>';
+        exGrid.appendChild(el);
+    });
+}
+
+function selectPackage(p){
+    selectedPackage = p;
+    document.querySelectorAll('.package').forEach(function(el){ el.classList.remove('selected'); });
+    var el = document.getElementById('pkg-' + p.id);
+    if(el) el.classList.add('selected');
+}
+
+function updatePaymentInfo(){
+    var c = document.getElementById('paymentInfo');
+    c.innerHTML =
+        '<div class="row"><span class="label">الطريقة:</span><span class="value" style="color:#ff6600">📱 أورنج كاش</span></div>' +
+        '<div class="row"><span class="label">رقم التحويل:</span><span class="value" id="orangeNumber">' + ORANGE_CASH_NUMBER + '</span></div>' +
+        '<div style="color:#58d68d;font-size:11px;text-align:center;margin-top:6px">👆 اضغط على الرقم لنسخه</div>' +
+        '<div style="color:#6a8f75;font-size:11px;margin-top:6px;text-align:center">حوّل المبلغ على الرقم ده، وبعدها اكتب رقمك تحت</div>';
+    var numEl = document.getElementById('orangeNumber');
+    numEl.onclick = function(){
+        if(navigator.clipboard){
+            navigator.clipboard.writeText(ORANGE_CASH_NUMBER).then(function(){ alert('✅ تم نسخ الرقم: ' + ORANGE_CASH_NUMBER); });
+        } else { alert('انسخ يدوياً: ' + ORANGE_CASH_NUMBER); }
+    };
+}
+
+function loadReceipt(event){
+    var file = event.target.files[0];
+    if(!file) return;
+    if(file.size > 300*1024){ showMsg('buyMsg','⚠️ الصورة كبيرة (300KB كحد أقصى)','error'); return; }
+    var reader = new FileReader();
+    reader.onload = function(e){
+        receiptBase64 = e.target.result;
+        document.getElementById('receiptPreview').innerHTML = '<img style="max-width:100%;border-radius:8px;margin-bottom:8px;border:1px solid #1e3d24" src="' + receiptBase64 + '">';
+        document.getElementById('uploadLabel').textContent = '✅ تم رفع الصورة';
+    };
+    reader.readAsDataURL(file);
+}
+
+function submitOrder(){
+    if(!firebaseReady){ showMsg('buyMsg','⚠️ Firebase غير متصل','error'); return; }
+    if(!selectedPackage){ showMsg('buyMsg','⚠️ اختر باقة أولاً','error'); return; }
+    var txId = document.getElementById('transactionId').value.trim();
+    if(!txId || txId.length < 5){ showMsg('buyMsg','⚠️ اكتب رقم المحفظة اللي حوّلت منها','error'); return; }
+
+    var requestId = db.ref('coinRequests').push().key;
+    var request = {
+        uid: currentUser,
+        username: currentUserData.username,
+        packageId: selectedPackage.id,
+        type: selectedPackage.type,
+        price: selectedPackage.price,
+        method: 'orange_cash',
+        transactionId: txId,
+        receipt: receiptBase64 || null,
+        status: 'pending',
+        createdAt: Date.now()
+    };
+    if(selectedPackage.type === 'coins'){
+        request.coins = selectedPackage.coins;
+    } else if(selectedPackage.type === 'dfp'){
+        request.dfp = selectedPackage.dfp;
+        request.bonus = selectedPackage.bonus || 0;
+        request.totalDfp = selectedPackage.dfp + (selectedPackage.bonus || 0);
+    } else if(selectedPackage.type === 'exclusive'){
+        request.exclusivePlayers = selectedPackage.exclusivePlayers;
+        request.exclusiveTitle = selectedPackage.title;
+    }
+
+    showMsg('buyMsg','⏳ جاري إرسال الطلب...','info');
+    db.ref('coinRequests/' + requestId).set(request).then(function(){
+        showMsg('buyMsg','✅ تم إرسال طلبك! هنراجعه قريباً','success');
+        document.getElementById('transactionId').value = '';
+        document.getElementById('receiptInput').value = '';
+        document.getElementById('receiptPreview').innerHTML = '';
+        document.getElementById('uploadLabel').textContent = '📷 اضغط لرفع صورة إثبات الدفع (اختياري)';
+        receiptBase64 = null;
+        selectedPackage = null;
+        document.querySelectorAll('.package').forEach(function(el){ el.classList.remove('selected'); });
+    }).catch(function(e){
+        showMsg('buyMsg','⚠️ فشل: ' + e.message,'error');
+    });
+}
+
+function loadHistory(){
+    if(!currentUser) return;
+    db.ref('coinRequests').orderByChild('uid').equalTo(currentUser).once('value').then(function(snap){
+        var data = snap.val() || {};
+        var arr = Object.values(data).sort(function(a,b){ return b.createdAt - a.createdAt; });
+        var c = document.getElementById('historyList');
+        if(arr.length === 0){
+            c.innerHTML = '<div class="empty">لسه معملتش أي طلب</div>';
+            return;
+        }
+        c.innerHTML = arr.map(function(r){
+            var statusText = r.status === 'pending' ? 'قيد المراجعة' : (r.status === 'approved' ? '✅ تم الشحن' : '❌ مرفوض');
+            var display = '';
+            var pkgClass = 'pkg';
+            if(r.type === 'exclusive'){
+                display = '🎁 ' + (r.exclusiveTitle || 'باقة حصرية');
+            } else if(r.type === 'dfp'){
+                var total = r.totalDfp || (r.dfp || 0) + (r.bonus || 0);
+                display = '💚 ' + total.toLocaleString() + ' DFP';
+                if(r.bonus) display += ' (' + r.dfp + ' + ' + r.bonus + ' هدية)';
+                pkgClass = 'pkg dfp-pkg';
+            } else {
+                display = '💰 ' + (r.coins || 0).toLocaleString() + ' كوين';
+            }
+            return '<div class="history-item">' +
+                '<div class="head"><span class="' + pkgClass + '">' + display + '</span><span class="status ' + r.status + '">' + statusText + '</span></div>' +
+                '<div class="meta">' + r.price + ' ج.م • أورنج كاش • ' + formatDate(r.createdAt) + '</div>' +
+                '</div>';
+        }).join('');
+    });
+}
+
+function showAdminLogin(){
+    isAdminMode = true;
+    document.getElementById('adminPassInput').value = '';
+    document.getElementById('adminLoginMsg').className = 'msg';
+    showScreen('adminLoginScreen');
+}
+
+function doAdminLogin(){
+    var pass = document.getElementById('adminPassInput').value.trim();
+    if(!pass){ showMsg('adminLoginMsg','⚠️ اكتب كلمة المرور','error'); return; }
+    if(pass !== ADMIN_PASSWORD){ showMsg('adminLoginMsg','❌ كلمة المرور غلط','error'); return; }
+    showMsg('adminLoginMsg','✅ تم الدخول','success');
+    setTimeout(function(){
+        showScreen('adminScreen');
+        loadAdminRequests();
+    }, 500);
+}
+
+function adminLogout(){
+    if(!confirm('خروج من الإدارة؟')) return;
+    if(adminListener){ adminListener.off(); adminListener = null; }
+    isAdminMode = false;
+    if(currentUser && currentUserData){ enterShop(); }
+    else { showScreen('authScreen'); }
+}
+
+function backToShop(){
+    isAdminMode = false;
+    if(currentUser && currentUserData){ enterShop(); }
+    else { showScreen('authScreen'); }
+}
+
+function loadAdminRequests(){
+    if(adminListener) adminListener.off();
+    adminListener = db.ref('coinRequests');
+    adminListener.on('value', function(snap){
+        var data = snap.val() || {};
+        var keys = Object.keys(data);
+        var arr = keys.map(function(k){ return Object.assign({}, data[k], { _id: k }); }).sort(function(a,b){ return b.createdAt - a.createdAt; });
+        var pending = arr.filter(function(r){ return r.status === 'pending'; });
+        document.getElementById('pendingCount').textContent = pending.length;
+        var c = document.getElementById('adminList');
+        if(arr.length === 0){
+            c.innerHTML = '<div class="empty">لا توجد طلبات</div>';
+            return;
+        }
+        c.innerHTML = arr.map(function(r){
+            var statusColor = r.status === 'pending' ? '#f39c12' : (r.status === 'approved' ? '#58d68d' : '#e74c3c');
+            var display = '';
+            var pkgClass = 'pkg';
+            var reqClass = 'admin-req';
+            if(r.type === 'exclusive'){
+                display = '🎁 ' + (r.exclusiveTitle || 'باقة حصرية');
+            } else if(r.type === 'dfp'){
+                var total = r.totalDfp || (r.dfp || 0) + (r.bonus || 0);
+                display = '💚 ' + total.toLocaleString() + ' DFP';
+                if(r.bonus) display += ' (' + r.dfp + ' + ' + r.bonus + ' هدية)';
+                pkgClass = 'pkg dfp-pkg';
+                reqClass = 'admin-req dfp-req';
+            } else {
+                display = '💰 ' + (r.coins || 0).toLocaleString() + ' كوين';
+            }
+            var html = '<div class="' + reqClass + '">' +
+                '<div class="head">' +
+                    '<span class="username">👤 ' + r.username + '</span>' +
+                    '<span class="' + pkgClass + '">' + display + ' (' + r.price + ' ج.م)</span>' +
+                '</div>' +
+                '<div class="details">' +
+                    'رقم المحفظة: <span>' + r.transactionId + '</span><br>' +
+                    'التاريخ: <span>' + formatDate(r.createdAt) + '</span>' +
+                '</div>';
+            if(r.receipt){
+                html += '<img class="img-preview" src="' + r.receipt + '" onclick="window.open(this.src)">';
+            }
+            if(r.status === 'pending'){
+                var approveCall;
+                if(r.type === 'exclusive'){
+                    approveCall = 'approveExclusive(\'' + r._id + '\',\'' + r.uid + '\')';
+                } else if(r.type === 'dfp'){
+                    var total = r.totalDfp || (r.dfp || 0) + (r.bonus || 0);
+                    approveCall = 'approveDfp(\'' + r._id + '\',\'' + r.uid + '\',' + total + ')';
+                } else {
+                    approveCall = 'approveRequest(\'' + r._id + '\',\'' + r.uid + '\',' + (r.coins || 0) + ')';
+                }
+                html += '<div class="actions">' +
+                    '<button class="btn-success" onclick="' + approveCall + '">✅ موافقة</button>' +
+                    '<button class="btn-danger" onclick="rejectRequest(\'' + r._id + '\')">❌ رفض</button>' +
+                    '</div>';
+            } else {
+                html += '<div style="text-align:center;color:' + statusColor + ';font-weight:700;font-size:12px">' + (r.status === 'approved' ? '✅ تم الشحن' : '❌ مرفوض') + '</div>';
+            }
+            html += '</div>';
+            return html;
+        }).join('');
+    });
+}
+
+function approveRequest(reqId, uid, coins){
+    if(!confirm('إرسال ' + coins + ' كوين لبريد اللاعب؟')) return;
+    var mailId = db.ref('users/' + uid + '/mail').push().key;
+    var mailData = {
+        type: 'coins',
+        amount: coins,
+        title: '💰 باقة ' + coins.toLocaleString() + ' كوين',
+        claimed: false,
+        createdAt: Date.now(),
+        requestId: reqId
+    };
+    db.ref('users/' + uid + '/mail/' + mailId).set(mailData).then(function(){
+        return db.ref('coinRequests/' + reqId).update({ status: 'approved', approvedAt: Date.now() });
+    }).then(function(){
+        alert('✅ تم إرسال الكوينز لبريد اللاعب');
+    }).catch(function(e){
+        alert('⚠️ ' + e.message);
+    });
+}
+
+function approveDfp(reqId, uid, dfp){
+    if(!confirm('إرسال ' + dfp + ' DFP لبريد اللاعب؟')) return;
+    var mailId = db.ref('users/' + uid + '/mail').push().key;
+    var mailData = {
+        type: 'dfp',
+        amount: dfp,
+        title: '💚 باقة ' + dfp.toLocaleString() + ' DFP',
+        claimed: false,
+        createdAt: Date.now(),
+        requestId: reqId
+    };
+    db.ref('users/' + uid + '/mail/' + mailId).set(mailData).then(function(){
+        return db.ref('coinRequests/' + reqId).update({ status: 'approved', approvedAt: Date.now() });
+    }).then(function(){
+        alert('✅ تم إرسال DFP لبريد اللاعب');
+    }).catch(function(e){
+        alert('⚠️ ' + e.message);
+    });
+}
+
+function approveExclusive(reqId, uid){
+    if(!confirm('إرسال اللاعبين الحصريين لبريد اللاعب؟')) return;
+    db.ref('coinRequests/' + reqId).once('value').then(function(snap){
+        var req = snap.val();
+        if(!req || !req.exclusivePlayers){ alert('⚠️ لا يوجد لاعبين'); return; }
+        var mailId = db.ref('users/' + uid + '/mail').push().key;
+        var mailData = {
+            type: 'players',
+            players: req.exclusivePlayers,
+            title: '🎁 باقة حصرية: ' + (req.exclusiveTitle || 'Roony + Ronaldo'),
+            claimed: false,
+            createdAt: Date.now(),
+            requestId: reqId
+        };
+        return db.ref('users/' + uid + '/mail/' + mailId).set(mailData).then(function(){
+            return db.ref('coinRequests/' + reqId).update({ status: 'approved', approvedAt: Date.now() });
+        });
+    }).then(function(){
+        alert('✅ تم إرسال اللاعبين لبريد اللاعب');
+    }).catch(function(e){
+        alert('⚠️ ' + e.message);
+    });
+}
+
+function rejectRequest(reqId){
+    if(!confirm('رفض الطلب؟')) return;
+    db.ref('coinRequests/' + reqId).update({ status: 'rejected', rejectedAt: Date.now() }).then(function(){
+        alert('✅ تم الرفض');
+    });
+}
+
+window.addEventListener('load', function(){
+    if(window.location.hash === '#admin'){
+        showAdminLogin();
+        return;
+    }
+    if(!firebaseReady){ showScreen('authScreen'); return; }
+    auth.onAuthStateChanged(function(user){
+        if(user){
+            currentUser = user.uid;
+            db.ref('users/' + user.uid).once('value').then(function(snap){
+                var data = snap.val();
+                if(data){ 
+                    currentUserData = data; 
+                    if(!currentUserData.ownedPlayers) currentUserData.ownedPlayers = {};
+                    if(currentUserData.dfp === undefined) currentUserData.dfp = 0;
+                    enterShop(); 
+                }
+                else { auth.signOut(); showScreen('authScreen'); }
+            });
+        } else {
+            showScreen('authScreen');
+        }
+    });
+});
+
+window.addEventListener('hashchange', function(){
+    if(window.location.hash === '#admin'){ showAdminLogin(); }
+});
+</script>
+</body>
+</html>
